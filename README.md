@@ -36,3 +36,7 @@ the user you're deploying this with needs:
 	]
 }
 ```
+
+## Known Issues
+
+- [#1]() `terraform destroy [...]` doesn't destroy subnet without you deleting EFS shares and the VPC manually

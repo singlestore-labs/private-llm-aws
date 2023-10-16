@@ -2,15 +2,15 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 4.0"
-    }
-    docker = {
-      source = "kreuzwerker/docker"
-      version = "~> 3.0.1"
+      version = "~> 5.21.0"
     }
     singlestoredb = {
       source = "singlestore-labs/singlestoredb"
       version = "0.1.0-alpha.5"
+    }
+    mysql = {
+      source = "petoju/mysql"
+      version = "3.0.43"
     }
   }
 }
@@ -21,6 +21,15 @@ provider "aws" {
   region = "${var.aws.AWS_REGION}"
   access_key = "${var.aws.AWS_ACCESS_KEY_ID}"
   secret_key = "${var.aws.AWS_SECRET_ACCESS_KEY}"
+}
+
+## Random name suffix
+resource "random_string" "resource_id" {
+  length  = 8
+  lower   = true
+  special = false
+  upper   = false
+  numeric  = true
 }
 
 ## [IAM] Policy Documents
@@ -63,7 +72,6 @@ resource "aws_iam_role" "s3_ls_role" {
   assume_role_policy = data.aws_iam_policy_document.s3_ls_assume_role_data.json
 }
 
-
 ### Create IAM Group for Users
 
 resource "aws_iam_group" "pllm-create-group" {
@@ -80,6 +88,27 @@ resource "aws_iam_user" "pllm-create-api-user" {
   name = "${var.api.user_name}"
   path = "/"
 }
+
+
+resource "aws_iam_user_policy" "sm_invoke_endpoint" {
+  name = "sm_invoke_endpoint"
+  user = aws_iam_user.pllm-create-api-user.name
+  policy = jsonencode({
+    "Version"    = "2012-10-17",
+    "Statement"  = {
+        "Effect" = "Allow",
+        "Action" = [
+            "sagemaker:InvokeEndpointAsync",
+            "sagemaker:InvokeEndpoint"
+        ],
+        "Resource"= "*"
+    }
+  })
+  depends_on = [
+    aws_iam_user.pllm-create-api-user
+  ]
+}
+
 
 ### Add IAM User to Group from above
 
@@ -100,7 +129,6 @@ resource "aws_iam_access_key" "pllm-create-api-user-apikey" {
   depends_on = [
     aws_iam_user.pllm-create-api-user
   ]
-  # FIXME: Store the access key ID and secret in variables for later use
 }
 
 ### Create IAM Role for API to LLM comms
@@ -136,9 +164,9 @@ resource "aws_iam_role_policy_attachment" "pllm-attach-api-user-S3RO" {
 
 #### - SageMaker RO
 
-resource "aws_iam_role_policy_attachment" "pllm-attach-api-user-SageMakerRO" {
+resource "aws_iam_role_policy_attachment" "pllm-attach-api-user-SageMakerFull" {
   role       = aws_iam_role.pllm-create-api-role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSageMakerReadOnly"
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
 }
 
 
@@ -238,7 +266,7 @@ resource "aws_vpc" "pllm-create-vpc" {
   enable_dns_hostnames = true
   enable_dns_support = true
   tags = {
-    Name = "${var.vpc.vpc_name}"
+    Name = format("%s-%s", var.vpc.vpc_name, random_string.resource_id.result)
   }
 }
 
@@ -247,6 +275,6 @@ resource "aws_subnet" "pllm-create-subnet" {
   vpc_id = aws_vpc.pllm-create-vpc.id
   cidr_block = "${var.vpc.subnet_cidr_block}"
   tags = {
-    Name = "${var.vpc.subnet_name}"
+    Name = format("%s-%s", var.vpc.subnet_name, random_string.resource_id.result)
   }
 }
