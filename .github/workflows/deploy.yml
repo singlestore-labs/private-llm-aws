@@ -30,12 +30,6 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
         with:
           registry-type: public
-      
-      - name: Declare some variables
-        shell: bash
-        working-directory: service/api
-        run: |
-          ls -la
 
       - name: Build, tag, and push to ECR
         env:
@@ -45,5 +39,5 @@ jobs:
           IMAGE_TAG: latest
         working-directory: service/api
         run: |
-          docker build --build-arg="COMMITHASH=${{ env.sha_short }}" -t $ECR_REGISTRY/$ECR_ALIAS/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker build --build-arg="COMMITHASH=${{ env.sha_short }}" --build-context=./service/api -t $ECR_REGISTRY/$ECR_ALIAS/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_ALIAS/$ECR_REPOSITORY:$IMAGE_TAG
