@@ -38,5 +38,5 @@ jobs:
           ECR_REPOSITORY: private_llm_fastapi_server
           IMAGE_TAG: latest
         run: |
-          docker build --build-arg="COMMITHASH=${{ env.sha_short }}" -t $ECR_REGISTRY/$ECR_ALIAS/$ECR_REPOSITORY:$IMAGE_TAG .service/api
+          docker build --build-arg="COMMITHASH=${{ env.sha_short }}" -t $ECR_REGISTRY/$ECR_ALIAS/$ECR_REPOSITORY:$IMAGE_TAG ./service/api
           docker push $ECR_REGISTRY/$ECR_ALIAS/$ECR_REPOSITORY:$IMAGE_TAG
