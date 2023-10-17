@@ -1,0 +1,13 @@
+config==0.5.1
+fastapi==0.103.2
+loguru==0.7.2
+pandas==1.5.3
+
+Requests==2.31.0
+langchain==0.0.313
+PyMySQL==1.1.0
+sqlalchemy
+sqlalchemy_utils
+
+uvicorn
+boto3
