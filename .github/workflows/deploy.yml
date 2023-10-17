@@ -1,0 +1,42 @@
+name: Deploy to ECR
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build Container Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Declare some variables
+        shell: bash
+        run: |
+          echo "sha_short=$(git rev-parse --short "$GITHUB_SHA")" >> "$GITHUB_ENV"
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr-public
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
+
+      - name: Build, tag, and push to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
+          ECR_ALIAS: n7b1f4b4
+          ECR_REPOSITORY: private_llm_fastapi_server
+          IMAGE_TAG: latest
+        run: |
+          docker build --build-arg="COMMITHASH=${{ env.sha_short }}" -t $ECR_REGISTRY/$ECR_ALIAS/$ECR_REPOSITORY:$IMAGE_TAG .service/api
+          docker push $ECR_REGISTRY/$ECR_ALIAS/$ECR_REPOSITORY:$IMAGE_TAG
