@@ -1,4 +1,4 @@
-name: Deploy to ECR
+name: Build & Deploy API Container to ECR
 
 on:
   push:
@@ -6,8 +6,11 @@ on:
 
 jobs:
   build:
-    name: Build Container Image
+    name: Build & Push API Container Image
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./service/api
 
     steps:
       - name: Check out code
@@ -33,7 +36,6 @@ jobs:
 
       - name: Ls the working directory
         shell: bash
-        working-directory: ./service/api
         run: |
           ls -la
           cat Dockerfile
@@ -46,5 +48,5 @@ jobs:
           IMAGE_TAG: latest
         working-directory: ./service/api
         run: |
-          docker build --build-arg="COMMITHASH=${{ env.sha_short }}" --build-context service_api=./service/api -t $ECR_REGISTRY/$ECR_ALIAS/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker build --build-arg="COMMITHASH=${{ env.sha_short }}" -t $ECR_REGISTRY/$ECR_ALIAS/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_ALIAS/$ECR_REPOSITORY:$IMAGE_TAG
