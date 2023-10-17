@@ -34,12 +34,6 @@ jobs:
         with:
           registry-type: public
 
-      - name: Ls the working directory
-        shell: bash
-        run: |
-          ls -la
-          cat Dockerfile
-
       - name: Build, tag, and push to ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
