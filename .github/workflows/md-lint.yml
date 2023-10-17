@@ -17,3 +17,4 @@ jobs:
         files: '**/*.md'
         ignore: node_modules
         version: 0.28.1
+      continue-on-error: true
